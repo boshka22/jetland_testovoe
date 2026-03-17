@@ -17,7 +17,7 @@
 ---
 
 ## Быстрый старт
-
+git clone https://github.com/boshka22/jetland_testovoe
 ```bash
 cp .env.example .env
 docker-compose up --build
