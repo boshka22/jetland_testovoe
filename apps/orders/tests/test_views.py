@@ -74,69 +74,124 @@ class TestCreateOrderView:
 
     def test_order_saved_in_db(self, client, user, good):
         """После успешного запроса запись Order есть в БД."""
-        client.post(ORDER_URL, {"user_id": user.pk, "goods": [{"good_id": good.pk, "quantity": 1}]}, format="json")
+        client.post(
+            ORDER_URL,
+            {"user_id": user.pk, "goods": [{"good_id": good.pk, "quantity": 1}]},
+            format="json",
+        )
         assert Order.objects.filter(user=user).exists()
 
     # -- 400 ошибки валидации -----------------------------------------------
 
     def test_missing_user_id_returns_400(self, client, good):
         payload = {"goods": [{"good_id": good.pk, "quantity": 1}]}
-        assert client.post(ORDER_URL, payload, format="json").status_code == status.HTTP_400_BAD_REQUEST
+        assert (
+            client.post(ORDER_URL, payload, format="json").status_code
+            == status.HTTP_400_BAD_REQUEST
+        )
 
     def test_empty_goods_returns_400(self, client, user):
         payload = {"user_id": user.pk, "goods": []}
-        assert client.post(ORDER_URL, payload, format="json").status_code == status.HTTP_400_BAD_REQUEST
+        assert (
+            client.post(ORDER_URL, payload, format="json").status_code
+            == status.HTTP_400_BAD_REQUEST
+        )
 
     def test_zero_quantity_returns_400(self, client, user, good):
         payload = {"user_id": user.pk, "goods": [{"good_id": good.pk, "quantity": 0}]}
-        assert client.post(ORDER_URL, payload, format="json").status_code == status.HTTP_400_BAD_REQUEST
+        assert (
+            client.post(ORDER_URL, payload, format="json").status_code
+            == status.HTTP_400_BAD_REQUEST
+        )
 
     def test_duplicate_good_ids_returns_400(self, client, user, good):
         payload = {
             "user_id": user.pk,
             "goods": [{"good_id": good.pk, "quantity": 1}, {"good_id": good.pk, "quantity": 2}],
         }
-        assert client.post(ORDER_URL, payload, format="json").status_code == status.HTTP_400_BAD_REQUEST
+        assert (
+            client.post(ORDER_URL, payload, format="json").status_code
+            == status.HTTP_400_BAD_REQUEST
+        )
 
     # -- 404 не найдено -----------------------------------------------------
 
     def test_unknown_user_returns_404(self, client, good):
-        response = client.post(ORDER_URL, {"user_id": 99999, "goods": [{"good_id": good.pk, "quantity": 1}]}, format="json")
+        response = client.post(
+            ORDER_URL,
+            {"user_id": 99999, "goods": [{"good_id": good.pk, "quantity": 1}]},
+            format="json",
+        )
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert "error" in response.json()
 
     def test_unknown_good_returns_404(self, client, user):
-        response = client.post(ORDER_URL, {"user_id": user.pk, "goods": [{"good_id": 99999, "quantity": 1}]}, format="json")
+        response = client.post(
+            ORDER_URL,
+            {"user_id": user.pk, "goods": [{"good_id": 99999, "quantity": 1}]},
+            format="json",
+        )
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert "error" in response.json()
 
     def test_unknown_promo_returns_404(self, client, user, good):
-        payload = {"user_id": user.pk, "goods": [{"good_id": good.pk, "quantity": 1}], "promo_code": "ПРИЗРАК"}
-        assert client.post(ORDER_URL, payload, format="json").status_code == status.HTTP_404_NOT_FOUND
+        payload = {
+            "user_id": user.pk,
+            "goods": [{"good_id": good.pk, "quantity": 1}],
+            "promo_code": "ПРИЗРАК",
+        }
+        assert (
+            client.post(ORDER_URL, payload, format="json").status_code == status.HTTP_404_NOT_FOUND
+        )
 
     # -- 422 нарушения бизнес-правил ----------------------------------------
 
     def test_expired_promo_returns_422(self, client, user, good):
         promo = PromoCodeFactory(expires_at=timezone.now() - timezone.timedelta(seconds=1))
-        payload = {"user_id": user.pk, "goods": [{"good_id": good.pk, "quantity": 1}], "promo_code": promo.code}
-        assert client.post(ORDER_URL, payload, format="json").status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        payload = {
+            "user_id": user.pk,
+            "goods": [{"good_id": good.pk, "quantity": 1}],
+            "promo_code": promo.code,
+        }
+        assert (
+            client.post(ORDER_URL, payload, format="json").status_code
+            == status.HTTP_422_UNPROCESSABLE_ENTITY
+        )
 
     def test_exhausted_promo_returns_422(self, client, user, good):
         promo = PromoCodeFactory(max_usages=1, used_count=1)
-        payload = {"user_id": user.pk, "goods": [{"good_id": good.pk, "quantity": 1}], "promo_code": promo.code}
-        assert client.post(ORDER_URL, payload, format="json").status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        payload = {
+            "user_id": user.pk,
+            "goods": [{"good_id": good.pk, "quantity": 1}],
+            "promo_code": promo.code,
+        }
+        assert (
+            client.post(ORDER_URL, payload, format="json").status_code
+            == status.HTTP_422_UNPROCESSABLE_ENTITY
+        )
 
     def test_already_used_promo_returns_422(self, client, user, good, promo):
-        payload = {"user_id": user.pk, "goods": [{"good_id": good.pk, "quantity": 1}], "promo_code": promo.code}
+        payload = {
+            "user_id": user.pk,
+            "goods": [{"good_id": good.pk, "quantity": 1}],
+            "promo_code": promo.code,
+        }
         client.post(ORDER_URL, payload, format="json")
-        assert client.post(ORDER_URL, payload, format="json").status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert (
+            client.post(ORDER_URL, payload, format="json").status_code
+            == status.HTTP_422_UNPROCESSABLE_ENTITY
+        )
 
     def test_promo_wrong_category_returns_422(self, client, user):
         """Промокод, не подходящий ни одному товару в заказе, возвращает 422."""
         cat_a, cat_b = CategoryFactory(), CategoryFactory()
         good = GoodFactory(price=Decimal("100.00"), category=cat_b)
         promo = PromoCodeFactory(discount_percent=Decimal("0.10"), category=cat_a)
-        payload = {"user_id": user.pk, "goods": [{"good_id": good.pk, "quantity": 1}], "promo_code": promo.code}
+        payload = {
+            "user_id": user.pk,
+            "goods": [{"good_id": good.pk, "quantity": 1}],
+            "promo_code": promo.code,
+        }
         response = client.post(ORDER_URL, payload, format="json")
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
         assert "error" in response.json()

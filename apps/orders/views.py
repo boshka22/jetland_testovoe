@@ -31,8 +31,7 @@ class CreateOrderView(APIView):
     @extend_schema(
         summary="Создать заказ",
         description=(
-            "Создаёт заказ. Если указан промокод — "
-            "применяет скидку к подходящим товарам."
+            "Создаёт заказ. Если указан промокод — " "применяет скидку к подходящим товарам."
         ),
         request=CreateOrderSerializer,
         responses={
@@ -74,11 +73,7 @@ class CreateOrderView(APIView):
                     ),
                     OpenApiExample(
                         "Уже использован",
-                        value={
-                            "error": (
-                                "Пользователь 1 уже использовал промокод 'X'."
-                            )
-                        },
+                        value={"error": ("Пользователь 1 уже использовал промокод 'X'.")},
                     ),
                     OpenApiExample(
                         "Не применим",

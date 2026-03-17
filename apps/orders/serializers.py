@@ -11,17 +11,13 @@ class OrderItemInputSerializer(serializers.Serializer):
 class CreateOrderSerializer(serializers.Serializer):
     user_id = serializers.IntegerField(min_value=1)
     goods = OrderItemInputSerializer(many=True, allow_empty=False)
-    promo_code = serializers.CharField(
-        max_length=50, required=False, allow_blank=False
-    )
+    promo_code = serializers.CharField(max_length=50, required=False, allow_blank=False)
 
     def validate_goods(self, value: list[dict]) -> list[dict]:
         """Запрещает дублирующиеся good_id в одном заказе."""
         good_ids = [item["good_id"] for item in value]
         if len(good_ids) != len(set(good_ids)):
-            raise serializers.ValidationError(
-                "Дублирующиеся good_id не допускаются."
-            )
+            raise serializers.ValidationError("Дублирующиеся good_id не допускаются.")
         return value
 
 
